@@ -5,25 +5,23 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.common.resources.DL4JResources;
 import org.deeplearning4j.common.resources.ResourceType;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
-import org.junit.Before;
+import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.zip.Adler32;
-import java.util.zip.Checksum;
 
 @Log4j2
 public class ScoreCAMTest extends TestCase {
 
     private static final String MODEL_HOME_URL = "https://github.com/basedrhys/wekaDeeplearning4j/releases/download/zoo-models-0.2/";
 
-    private static final String RESNET_URL = MODEL_HOME_URL + "KerasResNet50.zip";
+    private static final String RESNET50_URL = MODEL_HOME_URL + "KerasResNet50.zip";
+
+    private static final String RESNET101V2_URL = MODEL_HOME_URL + "KerasResNet101V2.zip";
 
     public ComputationGraph downloadModelFile(String remoteUrl) throws IOException {
         String localFilename = new File(remoteUrl).getName();
@@ -41,9 +39,7 @@ public class ScoreCAMTest extends TestCase {
         return ModelSerializer.restoreComputationGraph(cachedFile);
     }
 
-    public void testPretrainedModel(ComputationGraph computationGraph, String modelName) {
-        ScoreCAM scoreCAM = new ScoreCAM();
-        scoreCAM.setComputationGraph(computationGraph);
+    public void testPretrainedModel(ScoreCAM scoreCAM, String modelName) {
         scoreCAM.setBatchSize(8);
         scoreCAM.generateForImage("src/test/resources/images/dog.jpg");
 
@@ -58,8 +54,27 @@ public class ScoreCAMTest extends TestCase {
 
     public void testGenerateForImageKerasResNet50() {
         try {
-            ComputationGraph computationGraph = downloadModelFile(RESNET_URL);
-            testPretrainedModel(computationGraph, "ResNet50");
+            ComputationGraph computationGraph = downloadModelFile(RESNET50_URL);
+
+            ScoreCAM scoreCAM = new ScoreCAM();
+            scoreCAM.setComputationGraph(computationGraph);
+
+            testPretrainedModel(scoreCAM, "ResNet50");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            fail();
+        }
+    }
+
+    public void testGenerateForImageKerasResNet101V2() {
+        try {
+            ComputationGraph computationGraph = downloadModelFile(RESNET101V2_URL);
+
+            ScoreCAM scoreCAM = new ScoreCAM();
+            scoreCAM.setComputationGraph(computationGraph);
+            scoreCAM.setImagePreProcessingScaler(new ImagePreProcessingScaler(-1, 1));
+
+            testPretrainedModel(scoreCAM, "ResNet101V2");
         } catch (IOException ex) {
             ex.printStackTrace();
             fail();
